@@ -1,25 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Angry Birds Clone</title>
+
   <style>
     :root {
       --sky-top: #8ad4ff;
       --sky-bottom: #d9f5ff;
-      --ground: #7fc75f;
-      --wood: #b66a2c;
-      --wood-dark: #8f4e1d;
-      --glass: #8ad8ff;
-      --pig: #6ecf4a;
-      --pig-dark: #3f8a2d;
-      --bird: #ef5a4e;
-      --bird-dark: #c3382d;
-      --slingshot: #5b3b1a;
     }
 
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
 
     body {
       margin: 0;
@@ -38,7 +32,7 @@
       max-height: 576px;
       border: 6px solid #6a4a2b;
       border-radius: 16px;
-      box-shadow: 0 16px 48px rgba(0,0,0,0.25);
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.25);
       background: linear-gradient(to bottom, var(--sky-top), var(--sky-bottom));
       overflow: hidden;
     }
@@ -61,6 +55,7 @@
       font-size: 18px;
       pointer-events: none;
       user-select: none;
+      z-index: 2;
     }
 
     .overlay {
@@ -69,6 +64,7 @@
       display: none;
       align-items: center;
       justify-content: center;
+      flex-direction: column;
       background: rgba(17, 26, 32, 0.4);
       color: white;
       font-size: clamp(32px, 4vw, 56px);
@@ -79,7 +75,25 @@
       z-index: 10;
     }
 
-    .overlay.visible { display: flex; }
+    .overlay.visible {
+      display: flex;
+    }
+
+    .restart-btn {
+      margin-top: 20px;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 10px;
+      background: white;
+      color: #333;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .restart-btn:hover {
+      background: #eee;
+    }
 
     .instructions {
       position: absolute;
@@ -96,239 +110,1177 @@
     }
   </style>
 </head>
+
 <body>
+
   <div id="game-wrap">
-    <div class="hud">Score: <span id="score">0</span></div>
-    <div id="overlay" class="overlay">Level Clear!</div>
-    <div class="instructions">Drag the bird. Release to fire. Press R to restart.</div>
+
+    <div class="hud">
+      Score: <span id="score">0</span>
+    </div>
+
+    <div id="overlay" class="overlay">
+      <div id="message">Level Clear!</div>
+      <button class="restart-btn" onclick="resetGame()">Restart</button>
+    </div>
+
+    <div class="instructions">
+      Drag the bird and release to fire. Press R to restart.
+    </div>
+
     <canvas id="game" width="960" height="576"></canvas>
+
   </div>
 
-  <script>
-    const canvas = document.getElementById("game");
-    const ctx = canvas.getContext("2d");
-    const scoreEl = document.getElementById("score");
-    const overlayEl = document.getElementById("overlay");
+<script>
 
-    const WORLD = {
-      gravity: 0.22,
-      slingX: 160,
-      slingY: 390,
-      maxPull: 100,
-      birdRadius: 18
-    };
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
 
-    const state = {
-      score: 0,
-      level: 1,
-      gameOver: false,
-      dragging: false,
-      birdIndex: 0,
-      birds: [],
-      pigs: [],
-      blocks: [],
-      pointer: { x: 0, y: 0 }
-    };
+const scoreEl = document.getElementById("score");
+const overlayEl = document.getElementById("overlay");
+const messageEl = document.getElementById("message");
 
-    function clamp(value, min, max) {
-      return Math.min(Math.max(value, min), max);
+const WORLD = {
+  gravity: 0.22,
+  slingX: 160,
+  slingY: 390,
+  maxPull: 100,
+  birdRadius: 18
+};
+
+const state = {
+  score: 0,
+  gameOver: false,
+  dragging: false,
+  birdIndex: 0,
+  birds: [],
+  pigs: [],
+  blocks: [],
+  pointer: {
+    x: WORLD.slingX,
+    y: WORLD.slingY
+  }
+};
+
+
+// -----------------------------
+// Utility
+// -----------------------------
+
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
+
+
+// -----------------------------
+// Score
+// -----------------------------
+
+function addScore(amount) {
+  state.score += amount;
+  scoreEl.textContent = state.score;
+}
+
+
+// -----------------------------
+// Create bird
+// -----------------------------
+
+function makeBird(x = WORLD.slingX, y = WORLD.slingY) {
+
+  return {
+    x: x,
+    y: y,
+    radius: WORLD.birdRadius,
+    vx: 0,
+    vy: 0,
+    launched: false,
+    used: false,
+    ready: true
+  };
+}
+
+
+// -----------------------------
+// Create pig
+// -----------------------------
+
+function makePig(x, y) {
+
+  return {
+    x: x,
+    y: y,
+    w: 36,
+    h: 30,
+    hp: 1
+  };
+}
+
+
+// -----------------------------
+// Create block
+// -----------------------------
+
+function makeBlock(x, y, w, h, material = "wood") {
+
+  return {
+    x: x,
+    y: y,
+    w: w,
+    h: h,
+    hp: material === "stone" ? 5 : 2,
+    material: material
+  };
+}
+
+
+// -----------------------------
+// Build level
+// -----------------------------
+
+function buildLevel() {
+
+  state.pigs = [
+    makePig(720, 470),
+    makePig(820, 470),
+    makePig(770, 420)
+  ];
+
+  state.blocks = [
+    makeBlock(690, 460, 20, 80, "wood"),
+    makeBlock(850, 460, 20, 80, "wood"),
+    makeBlock(770, 385, 20, 90, "wood"),
+    makeBlock(730, 340, 90, 18, "stone"),
+    makeBlock(810, 340, 90, 18, "stone"),
+    makeBlock(770, 300, 18, 90, "stone")
+  ];
+}
+
+
+// -----------------------------
+// Reset game
+// -----------------------------
+
+function resetGame() {
+
+  state.birds = [
+    makeBird(),
+    makeBird(),
+    makeBird()
+  ];
+
+  state.birdIndex = 0;
+  state.score = 0;
+
+  scoreEl.textContent = "0";
+
+  state.gameOver = false;
+  state.dragging = false;
+
+  messageEl.textContent = "Level Clear!";
+  overlayEl.classList.remove("visible");
+
+  buildLevel();
+}
+
+
+// -----------------------------
+// Get active bird
+// -----------------------------
+
+function getActiveBird() {
+  return state.birds[state.birdIndex] || null;
+}
+
+
+// -----------------------------
+// Next bird
+// -----------------------------
+
+function nextBird() {
+
+  state.birdIndex++;
+
+  const bird = getActiveBird();
+
+  if (!bird) {
+
+    if (state.pigs.length > 0) {
+      messageEl.textContent = "Try Again!";
+    } else {
+      messageEl.textContent = "Level Clear!";
     }
 
-    function rand(min, max) {
-      return Math.random() * (max - min) + min;
-    }
+    overlayEl.classList.add("visible");
+    state.gameOver = true;
 
-    function addScore(amount) {
-      state.score += amount;
-      scoreEl.textContent = state.score;
-    }
+    return;
+  }
 
-    function makeBird(x = WORLD.slingX, y = WORLD.slingY) {
-      return {
-        x, y,
-        radius: WORLD.birdRadius,
-        vx: 0,
-        vy: 0,
-        launched: false,
-        used: false,
-        ready: true
-      };
-    }
+  bird.x = WORLD.slingX;
+  bird.y = WORLD.slingY;
 
-    function makePig(x, y) {
-      return {
-        x, y,
-        w: 36,
-        h: 30,
-        hp: 1
-      };
-    }
+  bird.vx = 0;
+  bird.vy = 0;
 
-    function makeBlock(x, y, w, h, material = "wood") {
-      return {
-        x, y, w, h,
-        hp: material === "stone" ? 5 : 2,
-        material
-      };
-    }
+  bird.launched = false;
+  bird.ready = true;
+}
 
-    function buildLevel() {
-      state.pigs = [
-        makePig(720, 470),
-        makePig(820, 470),
-        makePig(770, 420)
-      ];
 
-      state.blocks = [
-        makeBlock(690, 460, 20, 80, "wood"),
-        makeBlock(850, 460, 20, 80, "wood"),
-        makeBlock(770, 385, 20, 90, "wood"),
-        makeBlock(730, 340, 90, 18, "stone"),
-        makeBlock(810, 340, 90, 18, "stone"),
-        makeBlock(770, 300, 18, 90, "stone")
-      ];
-    }
+// -----------------------------
+// Launch bird
+// -----------------------------
 
-    function resetGame() {
-      state.birds = [makeBird(), makeBird(), makeBird()];
-      state.birdIndex = 0;
-      state.score = 0;
-      scoreEl.textContent = state.score;
-      overlayEl.classList.remove("visible");
-      overlayEl.textContent = "Level Clear!";
-      state.gameOver = false;
-      buildLevel();
-    }
+function launchBird() {
 
-    function getActiveBird() {
-      return state.birds[state.birdIndex] || null;
-    }
+  const bird = getActiveBird();
 
-    function nextBird() {
-      state.birdIndex += 1;
-      const bird = getActiveBird();
-      if (!bird) {
-        if (state.pigs.length > 0) {
-          overlayEl.textContent = "Try Again!";
-          overlayEl.classList.add("visible");
-          state.gameOver = true;
-        } else {
-          overlayEl.textContent = "Level Clear!";
-          overlayEl.classList.add("visible");
-          state.gameOver = true;
-        }
-        return;
+  if (!bird || bird.launched || state.gameOver) {
+    return;
+  }
+
+  const dx = bird.x - WORLD.slingX;
+  const dy = bird.y - WORLD.slingY;
+
+  bird.vx = dx * 0.12;
+  bird.vy = dy * 0.12;
+
+  bird.launched = true;
+  bird.used = true;
+  bird.ready = false;
+
+  bird.x += bird.vx * 0.8;
+  bird.y += bird.vy * 0.8;
+}
+
+
+// -----------------------------
+// Circle rectangle collision
+// -----------------------------
+
+function circleRectCollision(cx, cy, r, rect) {
+
+  const nearestX = clamp(
+    cx,
+    rect.x,
+    rect.x + rect.w
+  );
+
+  const nearestY = clamp(
+    cy,
+    rect.y,
+    rect.y + rect.h
+  );
+
+  const dx = cx - nearestX;
+  const dy = cy - nearestY;
+
+  return (dx * dx + dy * dy) <= (r * r);
+}
+
+
+// -----------------------------
+// Bird and block collision
+// -----------------------------
+
+function resolveBirdBlockCollision(bird, block) {
+
+  const closestX = clamp(
+    bird.x,
+    block.x,
+    block.x + block.w
+  );
+
+  const closestY = clamp(
+    bird.y,
+    block.y,
+    block.y + block.h
+  );
+
+  const dx = bird.x - closestX;
+  const dy = bird.y - closestY;
+
+  const distSq = dx * dx + dy * dy;
+
+  if (distSq < bird.radius * bird.radius) {
+
+    const dist = Math.sqrt(distSq) || 0.001;
+
+    const nx = dx / dist;
+    const ny = dy / dist;
+
+    const overlap = bird.radius - dist;
+
+    bird.x += nx * (overlap + 0.5);
+    bird.y += ny * (overlap + 0.5);
+
+    const impact = Math.hypot(
+      bird.vx,
+      bird.vy
+    );
+
+    bird.vx += nx * impact * 0.18;
+    bird.vy += ny * impact * 0.18;
+
+    block.hp -= 1;
+
+    addScore(10);
+
+    if (block.hp <= 0) {
+
+      const index = state.blocks.indexOf(block);
+
+      if (index >= 0) {
+        state.blocks.splice(index, 1);
       }
+    }
+  }
+}
+
+
+// -----------------------------
+// Bird and pig collision
+// -----------------------------
+
+function resolveBirdPigCollision(bird, pig) {
+
+  const closestX = clamp(
+    bird.x,
+    pig.x - pig.w / 2,
+    pig.x + pig.w / 2
+  );
+
+  const closestY = clamp(
+    bird.y,
+    pig.y - pig.h / 2,
+    pig.y + pig.h / 2
+  );
+
+  const dx = bird.x - closestX;
+  const dy = bird.y - closestY;
+
+  const distSq = dx * dx + dy * dy;
+
+  if (distSq < bird.radius * bird.radius) {
+
+    const dist = Math.sqrt(distSq) || 0.001;
+
+    const nx = dx / dist;
+    const ny = dy / dist;
+
+    const overlap = bird.radius - dist;
+
+    bird.x += nx * (overlap + 0.6);
+    bird.y += ny * (overlap + 0.6);
+
+    const impact = Math.hypot(
+      bird.vx,
+      bird.vy
+    );
+
+    bird.vx += nx * impact * 0.22;
+    bird.vy += ny * impact * 0.22;
+
+    pig.hp -= 1;
+
+    addScore(75);
+
+    if (pig.hp <= 0) {
+
+      const index = state.pigs.indexOf(pig);
+
+      if (index >= 0) {
+        state.pigs.splice(index, 1);
+      }
+    }
+  }
+}
+
+
+// -----------------------------
+// Bird physics
+// -----------------------------
+
+function updateBirdPhysics() {
+
+  const bird = getActiveBird();
+
+  if (!bird) {
+    return;
+  }
+
+  if (!bird.launched) {
+
+    if (state.dragging) {
+
+      let dx = state.pointer.x - WORLD.slingX;
+      let dy = state.pointer.y - WORLD.slingY;
+
+      const distance = Math.hypot(dx, dy);
+
+      if (distance > WORLD.maxPull) {
+
+        const nx = dx / distance;
+        const ny = dy / distance;
+
+        dx = nx * WORLD.maxPull;
+        dy = ny * WORLD.maxPull;
+      }
+
+      bird.x = WORLD.slingX + dx;
+      bird.y = WORLD.slingY + dy;
+
+    } else {
 
       bird.x = WORLD.slingX;
       bird.y = WORLD.slingY;
-      bird.vx = 0;
-      bird.vy = 0;
-      bird.launched = false;
-      bird.ready = true;
     }
 
-    function launchBird() {
-      const bird = getActiveBird();
-      if (!bird || bird.launched || state.gameOver) return;
+    return;
+  }
 
-      const dx = bird.x - WORLD.slingX;
-      const dy = bird.y - WORLD.slingY;
+  bird.vy += WORLD.gravity;
 
-      bird.vx = (dx * 0.12);
-      bird.vy = (dy * 0.12);
+  bird.x += bird.vx;
+  bird.y += bird.vy;
 
-      bird.launched = true;
-      bird.used = true;
-      bird.ready = false;
+  bird.vx *= 0.999;
+  bird.vy *= 0.999;
 
-      bird.x += bird.vx * 0.8;
-      bird.y += bird.vy * 0.8;
-    }
+  for (const block of [...state.blocks]) {
+    resolveBirdBlockCollision(bird, block);
+  }
 
-    function circleRectCollision(cx, cy, r, rect) {
-      const nearestX = clamp(cx, rect.x, rect.x + rect.w);
-      const nearestY = clamp(cy, rect.y, rect.y + rect.h);
-      const dx = cx - nearestX;
-      const dy = cy - nearestY;
-      return (dx * dx + dy * dy) <= (r * r);
-    }
+  for (const pig of [...state.pigs]) {
+    resolveBirdPigCollision(bird, pig);
+  }
 
-    function resolveBirdBlockCollision(bird, block) {
-      const closestX = clamp(bird.x, block.x, block.x + block.w);
-      const closestY = clamp(bird.y, block.y, block.y + block.h);
+  const groundY = 520;
 
-      const dx = bird.x - closestX;
-      const dy = bird.y - closestY;
-      const distSq = dx * dx + dy * dy;
+  if (bird.y + bird.radius > groundY) {
 
-      if (distSq < bird.radius * bird.radius) {
-        const dist = Math.sqrt(distSq) || 0.001;
-        const nx = dx / dist;
-        const ny = dy / dist;
+    bird.y = groundY - bird.radius;
 
-        const overlap = bird.radius - dist;
-        bird.x += nx * (overlap + 0.5);
-        bird.y += ny * (overlap + 0.5);
+    bird.vy *= -0.35;
+    bird.vx *= 0.75;
+  }
 
-        const impact = Math.hypot(bird.vx, bird.vy);
-        bird.vx += nx * impact * 0.18;
-        bird.vy += ny * impact * 0.18;
+  if (
+    Math.abs(bird.vx) < 0.08 &&
+    Math.abs(bird.vy) < 0.08 &&
+    bird.y >= groundY - bird.radius - 1
+  ) {
 
-        block.hp -= 1;
-        addScore(10);
+    setTimeout(() => {
 
-        if (block.hp <= 0) {
-          const index = state.blocks.indexOf(block);
-          if (index >= 0) state.blocks.splice(index, 1);
-        }
+      if (
+        getActiveBird() === bird &&
+        !state.gameOver
+      ) {
+        nextBird();
       }
+
+    }, 500);
+  }
+
+  if (
+    bird.x < -100 ||
+    bird.x > canvas.width + 100 ||
+    bird.y > canvas.height + 100
+  ) {
+
+    nextBird();
+  }
+}
+  // -----------------------------
+// Draw background
+// -----------------------------
+
+function drawBackground() {
+
+  const gradient = ctx.createLinearGradient(
+    0,
+    0,
+    0,
+    canvas.height
+  );
+
+  gradient.addColorStop(0, "#8ad4ff");
+  gradient.addColorStop(1, "#d9f5ff");
+
+  ctx.fillStyle = gradient;
+
+  ctx.fillRect(
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
+
+  drawCloud(180, 100, 1);
+  drawCloud(480, 80, 0.8);
+  drawCloud(780, 120, 1.1);
+
+  ctx.fillStyle = "#7fc75f";
+
+  ctx.fillRect(
+    0,
+    520,
+    canvas.width,
+    56
+  );
+
+  ctx.fillStyle = "#559c3e";
+
+  ctx.fillRect(
+    0,
+    520,
+    canvas.width,
+    6
+  );
+}
+
+
+// -----------------------------
+// Draw cloud
+// -----------------------------
+
+function drawCloud(x, y, scale) {
+
+  ctx.save();
+
+  ctx.translate(x, y);
+  ctx.scale(scale, scale);
+
+  ctx.fillStyle = "rgba(255,255,255,0.75)";
+
+  ctx.beginPath();
+
+  ctx.arc(0, 15, 25, 0, Math.PI * 2);
+  ctx.arc(30, 5, 35, 0, Math.PI * 2);
+  ctx.arc(65, 15, 25, 0, Math.PI * 2);
+
+  ctx.fill();
+
+  ctx.restore();
+}
+
+
+// -----------------------------
+// Draw slingshot
+// -----------------------------
+
+function drawSlingshot() {
+
+  const x = WORLD.slingX;
+  const y = WORLD.slingY;
+
+  ctx.strokeStyle = "#5b3b1a";
+  ctx.lineWidth = 12;
+  ctx.lineCap = "round";
+
+  ctx.beginPath();
+
+  ctx.moveTo(x - 15, y + 75);
+  ctx.lineTo(x - 5, y - 15);
+
+  ctx.stroke();
+
+  ctx.beginPath();
+
+  ctx.moveTo(x + 15, y + 75);
+  ctx.lineTo(x + 5, y - 15);
+
+  ctx.stroke();
+
+  const bird = getActiveBird();
+
+  if (bird && !bird.launched) {
+
+    ctx.strokeStyle = "#2f2115";
+    ctx.lineWidth = 5;
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+      x - 5,
+      y - 15
+    );
+
+    ctx.lineTo(
+      bird.x,
+      bird.y
+    );
+
+    ctx.lineTo(
+      x + 5,
+      y - 15
+    );
+
+    ctx.stroke();
+  }
+}
+
+
+// -----------------------------
+// Draw bird
+// -----------------------------
+
+function drawBird(bird) {
+
+  ctx.save();
+
+  ctx.translate(
+    bird.x,
+    bird.y
+  );
+
+  ctx.fillStyle = "#ef5a4e";
+
+  ctx.beginPath();
+
+  ctx.arc(
+    0,
+    0,
+    bird.radius,
+    0,
+    Math.PI * 2
+  );
+
+  ctx.fill();
+
+  ctx.fillStyle = "#d9443a";
+
+  ctx.beginPath();
+
+  ctx.arc(
+    0,
+    8,
+    11,
+    0,
+    Math.PI
+  );
+
+  ctx.fill();
+
+  ctx.fillStyle = "white";
+
+  ctx.beginPath();
+
+  ctx.arc(
+    -6,
+    -5,
+    5,
+    0,
+    Math.PI * 2
+  );
+
+  ctx.arc(
+    6,
+    -5,
+    5,
+    0,
+    Math.PI * 2
+  );
+
+  ctx.fill();
+
+  ctx.fillStyle = "black";
+
+  ctx.beginPath();
+
+  ctx.arc(
+    -5,
+    -5,
+    2,
+    0,
+    Math.PI * 2
+  );
+
+  ctx.arc(
+    5,
+    -5,
+    2,
+    0,
+    Math.PI * 2
+  );
+
+  ctx.fill();
+
+  ctx.fillStyle = "#f5a623";
+
+  ctx.beginPath();
+
+  ctx.moveTo(15, 2);
+  ctx.lineTo(29, 7);
+  ctx.lineTo(15, 12);
+
+  ctx.closePath();
+
+  ctx.fill();
+
+  ctx.strokeStyle = "#3b1b18";
+  ctx.lineWidth = 4;
+
+  ctx.beginPath();
+
+  ctx.moveTo(-12, -12);
+  ctx.lineTo(-2, -9);
+
+  ctx.moveTo(2, -9);
+  ctx.lineTo(12, -12);
+
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+
+// -----------------------------
+// Draw pig
+// -----------------------------
+
+function drawPig(pig) {
+
+  ctx.save();
+
+  ctx.translate(
+    pig.x,
+    pig.y
+  );
+
+  ctx.fillStyle = "#6ecf4a";
+
+  ctx.beginPath();
+
+  ctx.arc(
+    0,
+    0,
+    18,
+    0,
+    Math.PI * 2
+  );
+
+  ctx.fill();
+
+  ctx.fillStyle = "#3f8a2d";
+
+  ctx.beginPath();
+
+  ctx.arc(
+    -11,
+    -15,
+    7,
+    0,
+    Math.PI * 2
+  );
+
+  ctx.arc(
+    11,
+    -15,
+    7,
+    0,
+    Math.PI * 2
+  );
+
+  ctx.fill();
+
+  ctx.fillStyle = "white";
+
+  ctx.beginPath();
+
+  ctx.arc(
+    -6,
+    -5,
+    5,
+    0,
+    Math.PI * 2
+  );
+
+  ctx.arc(
+    6,
+    -5,
+    5,
+    0,
+    Math.PI * 2
+  );
+
+  ctx.fill();
+
+  ctx.fillStyle = "black";
+
+  ctx.beginPath();
+
+  ctx.arc(
+    -6,
+    -5,
+    2,
+    0,
+    Math.PI * 2
+  );
+
+  ctx.arc(
+    6,
+    -5,
+    2,
+    0,
+    Math.PI * 2
+  );
+
+  ctx.fill();
+
+  ctx.fillStyle = "#4c9e34";
+
+  ctx.beginPath();
+
+  ctx.ellipse(
+    0,
+    7,
+    9,
+    6,
+    0,
+    0,
+    Math.PI * 2
+  );
+
+  ctx.fill();
+
+  ctx.fillStyle = "#275d20";
+
+  ctx.beginPath();
+
+  ctx.arc(
+    -4,
+    7,
+    2,
+    0,
+    Math.PI * 2
+  );
+
+  ctx.arc(
+    4,
+    7,
+    2,
+    0,
+    Math.PI * 2
+  );
+
+  ctx.fill();
+
+  ctx.restore();
+}
+
+
+// -----------------------------
+// Draw block
+// -----------------------------
+
+function drawBlock(block) {
+
+  if (block.material === "wood") {
+
+    ctx.fillStyle = "#b66a2c";
+    ctx.strokeStyle = "#8f4e1d";
+
+  } else {
+
+    ctx.fillStyle = "#888";
+    ctx.strokeStyle = "#555";
+  }
+
+  ctx.fillRect(
+    block.x,
+    block.y,
+    block.w,
+    block.h
+  );
+
+  ctx.lineWidth = 3;
+
+  ctx.strokeRect(
+    block.x,
+    block.y,
+    block.w,
+    block.h
+  );
+
+  if (block.material === "wood") {
+
+    ctx.strokeStyle = "rgba(70,35,10,0.35)";
+    ctx.lineWidth = 2;
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+      block.x + block.w / 2,
+      block.y
+    );
+
+    ctx.lineTo(
+      block.x + block.w / 2,
+      block.y + block.h
+    );
+
+    ctx.stroke();
+  }
+}
+
+
+// -----------------------------
+// Draw trajectory
+// -----------------------------
+
+function drawTrajectory() {
+
+  const bird = getActiveBird();
+
+  if (
+    !bird ||
+    bird.launched ||
+    !state.dragging
+  ) {
+    return;
+  }
+
+  const dx = bird.x - WORLD.slingX;
+  const dy = bird.y - WORLD.slingY;
+
+  const vx = dx * 0.12;
+  const vy = dy * 0.12;
+
+  ctx.fillStyle = "rgba(50,50,50,0.35)";
+
+  for (let i = 1; i <= 10; i++) {
+
+    const t = i * 5;
+
+    const px =
+      WORLD.slingX +
+      vx * t;
+
+    const py =
+      WORLD.slingY +
+      vy * t +
+      0.5 *
+      WORLD.gravity *
+      t *
+      t;
+
+    ctx.beginPath();
+
+    ctx.arc(
+      px,
+      py,
+      4,
+      0,
+      Math.PI * 2
+    );
+
+    ctx.fill();
+  }
+}
+
+
+// -----------------------------
+// Draw everything
+// -----------------------------
+
+function draw() {
+
+  ctx.clearRect(
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
+
+  drawBackground();
+
+  for (const block of state.blocks) {
+    drawBlock(block);
+  }
+
+  for (const pig of state.pigs) {
+    drawPig(pig);
+  }
+
+  drawTrajectory();
+
+  drawSlingshot();
+
+  const activeBird = getActiveBird();
+
+  if (activeBird) {
+    drawBird(activeBird);
+  }
+
+  for (
+    let i = state.birdIndex + 1;
+    i < state.birds.length;
+    i++
+  ) {
+
+    const bird = state.birds[i];
+
+    if (!bird.used) {
+
+      ctx.save();
+
+      ctx.globalAlpha = 0.7;
+
+      drawBird({
+        x: 80 + (i - state.birdIndex) * 45,
+        y: 495,
+        radius: 14
+      });
+
+      ctx.restore();
+    }
+  }
+}
+
+
+// -----------------------------
+// Game loop
+// -----------------------------
+
+function gameLoop() {
+
+  if (!state.gameOver) {
+
+    updateBirdPhysics();
+
+    if (
+      state.pigs.length === 0 &&
+      !state.gameOver
+    ) {
+
+      messageEl.textContent = "Level Clear!";
+
+      overlayEl.classList.add("visible");
+
+      state.gameOver = true;
+    }
+  }
+
+  draw();
+
+  requestAnimationFrame(gameLoop);
+}
+
+
+// -----------------------------
+// Pointer position
+// -----------------------------
+
+function updatePointer(event) {
+
+  const rect =
+    canvas.getBoundingClientRect();
+
+  state.pointer.x =
+    (event.clientX - rect.left) *
+    (canvas.width / rect.width);
+
+  state.pointer.y =
+    (event.clientY - rect.top) *
+    (canvas.height / rect.height);
+}
+
+
+// -----------------------------
+// Mouse / Touch controls
+// -----------------------------
+
+canvas.addEventListener(
+  "pointerdown",
+  function(event) {
+
+    if (state.gameOver) {
+      return;
     }
 
-    function resolveBirdPigCollision(bird, pig) {
-      const closestX = clamp(bird.x, pig.x - pig.w / 2, pig.x + pig.w / 2);
-      const closestY = clamp(bird.y, pig.y - pig.h / 2, pig.y + pig.h / 2);
-      const dx = bird.x - closestX;
-      const dy = bird.y - closestY;
-      const distSq = dx * dx + dy * dy;
+    updatePointer(event);
 
-      if (distSq < bird.radius * bird.radius) {
-        const dist = Math.sqrt(distSq) || 0.001;
-        const nx = dx / dist;
-        const ny = dy / dist;
+    const bird = getActiveBird();
 
-        const overlap = bird.radius - dist;
-        bird.x += nx * (overlap + 0.6);
-        bird.y += ny * (overlap + 0.6);
-
-        const impact = Math.hypot(bird.vx, bird.vy);
-        bird.vx += nx * impact * 0.22;
-        bird.vy += ny * impact * 0.22;
-
-        pig.hp -= 1;
-        addScore(75);
-
-        if (pig.hp <= 0) {
-          const index = state.pigs.indexOf(pig);
-          if (index >= 0) state.pigs.splice(index, 1);
-        }
-      }
+    if (!bird || bird.launched) {
+      return;
     }
 
-    function updateBirdPhysics() {
-      const bird = getActiveBird();
-      if (!bird) return;
+    const distance = Math.hypot(
+      state.pointer.x - bird.x,
+      state.pointer.y - bird.y
+    );
 
-      if (!bird.launched) {
-        const dx = state.pointer.x - WORLD.slingX;
-        const dy = state.pointer.y - WORLD.slingY;
+    if (distance < 45) {
 
-        if (state.dragging) {
-          const mag = Math.hypot(dx, dy);
-          const limit = WORLD.maxPull;
-          if (mag > limit) {
-            const nx = dx / mag;
-            const ny = dy / mag;
-            bird.x = WORLD.slingX + nx * limit;
-            bird.y = WORLD.slingY*
-
+      state.dragging = true;
+
+      canvas.setPointerCapture(
+        event.pointerId
+      );
+    }
+  }
+);
+
+
+canvas.addEventListener(
+  "pointermove",
+  function(event) {
+
+    updatePointer(event);
+  }
+);
+
+
+canvas.addEventListener(
+  "pointerup",
+  function(event) {
+
+    if (!state.dragging) {
+      return;
+    }
+
+    updatePointer(event);
+
+    state.dragging = false;
+
+    launchBird();
+  }
+);
+
+
+// -----------------------------
+// Keyboard
+// -----------------------------
+
+window.addEventListener(
+  "keydown",
+  function(event) {
+
+    if (
+      event.key === "r" ||
+      event.key === "R"
+    ) {
+
+      resetGame();
+    }
+  }
+);
+
+
+// -----------------------------
+// Start game
+// -----------------------------
+
+resetGame();
+
+gameLoop();
+
+</script>
+
+</body>
+</html>
