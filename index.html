@@ -894,7 +894,7 @@ function loseGame(){
   game.gameOver=true;
 
   showMessage(
-    "വേല്ല പണിക്കും പോടാ",
+    ". വെല്ല പണിക്കും പോടാ",
     "Try the level again 😂",
     "Retry"
   );
@@ -1118,7 +1118,7 @@ function hitPig(
 
   return true;
 
-}/* =====================================================
+} /* =====================================================
    BIRD ABILITIES
 ===================================================== */
 
@@ -2111,273 +2111,220 @@ function drawBird(
 
   ctx.restore();
 
-      }/* =====================================================
-   DRAW PIG
-===================================================== */
-
-function drawPig(
-  pig
-){
-
+      }function drawBird(bird){
   ctx.save();
 
-  ctx.translate(
-    pig.x,
-    pig.y
-  );
-
-
-  /* Body */
+  ctx.translate(bird.x,bird.y);
 
   ctx.fillStyle=
-    "#69c94a";
-
+    BIRD_TYPES[bird.type].color;
 
   ctx.beginPath();
-
   ctx.arc(
     0,
     0,
-    19,
+    bird.radius,
     0,
     Math.PI*2
   );
 
   ctx.fill();
 
-
-  /* Ears */
-
-  ctx.fillStyle=
-    "#3f8d2e";
-
+  ctx.fillStyle="white";
 
   ctx.beginPath();
-
-  ctx.arc(
-    -11,
-    -15,
-    7,
-    0,
-    Math.PI*2
-  );
-
-  ctx.arc(
-    11,
-    -15,
-    7,
-    0,
-    Math.PI*2
-  );
-
+  ctx.arc(-6,-5,5,0,Math.PI*2);
+  ctx.arc(6,-5,5,0,Math.PI*2);
   ctx.fill();
 
-
-  /* Eyes */
-
-  ctx.fillStyle=
-    "white";
-
+  ctx.fillStyle="black";
 
   ctx.beginPath();
-
-  ctx.arc(
-    -6,
-    -5,
-    5,
-    0,
-    Math.PI*2
-  );
-
-  ctx.arc(
-    6,
-    -5,
-    5,
-    0,
-    Math.PI*2
-  );
-
+  ctx.arc(-6,-5,2,0,Math.PI*2);
+  ctx.arc(6,-5,2,0,Math.PI*2);
   ctx.fill();
 
-
-  ctx.fillStyle=
-    "black";
-
+  ctx.fillStyle="#f39c12";
 
   ctx.beginPath();
-
-  ctx.arc(
-    -6,
-    -5,
-    2,
-    0,
-    Math.PI*2
-  );
-
-  ctx.arc(
-    6,
-    -5,
-    2,
-    0,
-    Math.PI*2
-  );
-
+  ctx.moveTo(0,2);
+  ctx.lineTo(18,7);
+  ctx.lineTo(0,11);
+  ctx.closePath();
   ctx.fill();
-
-
-  /* Nose */
-
-  ctx.fillStyle=
-    "#4b9d35";
-
-
-  ctx.beginPath();
-
-  ctx.ellipse(
-    0,
-    7,
-    9,
-    6,
-    0,
-    0,
-    Math.PI*2
-  );
-
-  ctx.fill();
-
-
-  ctx.fillStyle=
-    "#214f1c";
-
-
-  ctx.beginPath();
-
-  ctx.arc(
-    -4,
-    7,
-    2,
-    0,
-    Math.PI*2
-  );
-
-  ctx.arc(
-    4,
-    7,
-    2,
-    0,
-    Math.PI*2
-  );
-
-  ctx.fill();
-
 
   ctx.restore();
-
 }
 
 
-/* =====================================================
-   DRAW BLOCK
-===================================================== */
+function drawPig(pig){
+  ctx.save();
 
-function drawBlock(
-  block
-){
+  ctx.translate(pig.x,pig.y);
 
-  if(
-    block.material==="wood"
-  ){
+  ctx.fillStyle="#75c043";
 
-    ctx.fillStyle=
-      "#b66a2c";
+  ctx.beginPath();
+  ctx.arc(
+    0,
+    0,
+    pig.radius,
+    0,
+    Math.PI*2
+  );
 
-    ctx.strokeStyle=
-      "#7d431a";
+  ctx.fill();
 
-  }
-  else{
+  ctx.fillStyle="white";
 
-    ctx.fillStyle=
-      "#888";
+  ctx.beginPath();
+  ctx.arc(-6,-5,4,0,Math.PI*2);
+  ctx.arc(6,-5,4,0,Math.PI*2);
+  ctx.fill();
 
-    ctx.strokeStyle=
-      "#555";
+  ctx.fillStyle="black";
 
-  }
+  ctx.beginPath();
+  ctx.arc(-6,-5,2,0,Math.PI*2);
+  ctx.arc(6,-5,2,0,Math.PI*2);
+  ctx.fill();
 
+  ctx.fillStyle="#5c9e32";
+
+  ctx.beginPath();
+  ctx.arc(
+    0,
+    6,
+    7,
+    0,
+    Math.PI*2
+  );
+
+  ctx.fill();
+
+  ctx.fillStyle="black";
+
+  ctx.beginPath();
+  ctx.arc(-3,6,1.5,0,Math.PI*2);
+  ctx.arc(3,6,1.5,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.restore();
+}
+
+
+function drawBlock(block){
+  ctx.save();
+
+  ctx.translate(block.x,block.y);
+  ctx.rotate(block.angle);
+
+  ctx.fillStyle=
+    block.type==="stone"
+      ? "#777"
+      : "#c88b4a";
 
   ctx.fillRect(
-    block.x,
-    block.y,
+    -block.w/2,
+    -block.h/2,
     block.w,
     block.h
   );
 
+  ctx.strokeStyle=
+    block.type==="stone"
+      ? "#444"
+      : "#8a5a2b";
 
   ctx.lineWidth=3;
 
-
   ctx.strokeRect(
-    block.x,
-    block.y,
+    -block.w/2,
+    -block.h/2,
     block.w,
     block.h
   );
 
+  ctx.restore();
+}
 
-  /* Damage lines */
+
+function drawSling(){
+  ctx.strokeStyle="#6b3f20";
+  ctx.lineWidth=10;
+  ctx.lineCap="round";
+
+  ctx.beginPath();
+
+  ctx.moveTo(
+    WORLD.slingX-25,
+    WORLD.slingY+55
+  );
+
+  ctx.lineTo(
+    WORLD.slingX-12,
+    WORLD.slingY-15
+  );
+
+  ctx.stroke();
+
+  ctx.beginPath();
+
+  ctx.moveTo(
+    WORLD.slingX+25,
+    WORLD.slingY+55
+  );
+
+  ctx.lineTo(
+    WORLD.slingX+12,
+    WORLD.slingY-15
+  );
+
+  ctx.stroke();
+
+  const bird=
+    game.birds[game.birdIndex];
 
   if(
-    block.hp<=1
+    bird &&
+    !bird.launched
   ){
-
-    ctx.strokeStyle=
-      "rgba(0,0,0,.5)";
-
-    ctx.lineWidth=2;
-
+    ctx.strokeStyle="#5a351e";
+    ctx.lineWidth=5;
 
     ctx.beginPath();
 
     ctx.moveTo(
-      block.x+4,
-      block.y+4
+      WORLD.slingX-12,
+      WORLD.slingY-15
     );
 
     ctx.lineTo(
-      block.x+
-      block.w-4,
-      block.y+
-      block.h-4
+      bird.x,
+      bird.y
+    );
+
+    ctx.lineTo(
+      WORLD.slingX+12,
+      WORLD.slingY-15
     );
 
     ctx.stroke();
-
   }
-
 }
 
 
-/* =====================================================
-   TRAJECTORY
-===================================================== */
-
 function drawTrajectory(){
-
-  const bird =
-    getBird();
-
+  const bird=
+    game.birds[game.birdIndex];
 
   if(
     !bird ||
     bird.launched ||
     !game.dragging
   ){
-
     return;
-
   }
-
 
   const dx =
     bird.x-
@@ -2387,120 +2334,55 @@ function drawTrajectory(){
     bird.y-
     WORLD.slingY;
 
-
   const vx =
-    dx*.12;
+    -dx*.12;
 
   const vy =
-    dy*.12;
-
+    -dy*.12;
 
   ctx.fillStyle=
-    "rgba(40,40,40,.35)";
-
+    "rgba(255,255,255,.75)";
 
   for(
     let i=1;
-    i<=12;
+    i<25;
     i++
   ){
+    const t=i*.18;
 
-    const t =
-      i*5;
-
-
-    const px =
-      WORLD.slingX+
+    const x=
+      bird.x+
       vx*t;
 
-
-    const py =
-      WORLD.slingY+
+    const y=
+      bird.y+
       vy*t+
-      .5*
-      WORLD.gravity*
-      t*t;
+      .5*WORLD.gravity*t*t;
 
+    if(
+      x<0 ||
+      x>WORLD.width ||
+      y>WORLD.height
+    ){
+      break;
+    }
 
     ctx.beginPath();
 
     ctx.arc(
-      px,
-      py,
-      4,
+      x,
+      y,
+      3,
       0,
       Math.PI*2
     );
 
     ctx.fill();
-
   }
-
 }
 
-
-/* =====================================================
-   DRAW REMAINING BIRDS
-===================================================== */
-
-function drawRemainingBirds(){
-
-  let count=0;
-
-
-  for(
-    let i=game.birdIndex+1;
-    i<game.birds.length;
-    i++
-  ){
-
-    const bird =
-      game.birds[i];
-
-
-    if(
-      bird.used
-    ){
-
-      continue;
-
-    }
-
-
-    const x =
-      75+
-      count*45;
-
-    const y =
-      490;
-
-
-    drawBird({
-
-      x:x,
-
-      y:y,
-
-      radius:14,
-
-      type:bird.type
-
-    });
-
-
-    count++;
-
-  }
-
-}
-
-
-/* =====================================================
-   DRAW EVERYTHING
-===================================================== */
 
 function draw(){
-
   ctx.clearRect(
     0,
     0,
@@ -2508,98 +2390,397 @@ function draw(){
     WORLD.height
   );
 
-
   drawBackground();
 
+  drawBlocks();
 
-  /* Blocks */
+  drawPigs();
 
-  for(
-    const block
-    of game.blocks
-  ){
-
-    drawBlock(
-      block
-    );
-
-  }
-
-
-  /* Pigs */
-
-  for(
-    const pig
-    of game.pigs
-  ){
-
-    drawPig(
-      pig
-    );
-
-  }
-
+  drawSling();
 
   drawTrajectory();
 
-
-  drawSlingshot();
-
-
-  /* Active bird */
-
-  const bird =
-    getBird();
-
+  const bird=
+    game.birds[game.birdIndex];
 
   if(bird){
-
-    drawBird(
-      bird
-    );
-
+    drawBird(bird);
   }
-
-
-  /* EXTRA BLUE SPLIT BIRDS */
 
   for(
-    const splitBird
-    of game.abilityBirds
+    const b of game.abilityBirds
   ){
-
-    drawBird(
-      splitBird
-    );
-
+    drawBird(b);
   }
 
-
-  drawRemainingBirds();
-
+  drawUI();
 }
 
 
-/* =====================================================
-   LAUNCH BIRD
-===================================================== */
+function drawBackground(){
+  const gradient=
+    ctx.createLinearGradient(
+      0,
+      0,
+      0,
+      WORLD.height
+    );
+
+  gradient.addColorStop(
+    0,
+    "#74c7ff"
+  );
+
+  gradient.addColorStop(
+    1,
+    "#d9f3ff"
+  );
+
+  ctx.fillStyle=gradient;
+
+  ctx.fillRect(
+    0,
+    0,
+    WORLD.width,
+    WORLD.height
+  );
+
+  ctx.fillStyle="#6ecb3c";
+
+  ctx.fillRect(
+    0,
+    WORLD.groundY,
+    WORLD.width,
+    WORLD.height-WORLD.groundY
+  );
+
+  ctx.fillStyle="#55a82d";
+
+  ctx.fillRect(
+    0,
+    WORLD.groundY,
+    WORLD.width,
+    8
+  );
+
+  ctx.fillStyle="rgba(255,255,255,.7)";
+
+  for(
+    let i=0;
+    i<6;
+    i++
+  ){
+    const x=
+      80+
+      i*170;
+
+    const y=
+      70+
+      (i%2)*45;
+
+    ctx.beginPath();
+
+    ctx.arc(
+      x,
+      y,
+      25,
+      0,
+      Math.PI*2
+    );
+
+    ctx.arc(
+      x+30,
+      y+5,
+      32,
+      0,
+      Math.PI*2
+    );
+
+    ctx.arc(
+      x+65,
+      y,
+      25,
+      0,
+      Math.PI*2
+    );
+
+    ctx.fill();
+  }
+}
+
+
+function drawBlocks(){
+  for(
+    const block of game.blocks
+  ){
+    drawBlock(block);
+  }
+}
+
+
+function drawPigs(){
+  for(
+    const pig of game.pigs
+  ){
+    drawPig(pig);
+  }
+}
+
+
+function drawUI(){
+  ctx.fillStyle="rgba(0,0,0,.45)";
+
+  ctx.fillRect(
+    15,
+    15,
+    270,
+    72
+  );
+
+  ctx.fillStyle="white";
+
+  ctx.font=
+    "bold 20px Arial";
+
+  ctx.fillText(
+    "Level: "+game.level,
+    30,
+    42
+  );
+
+  ctx.fillText(
+    "Score: "+game.score,
+    30,
+    68
+  );
+
+  const bird=
+    game.birds[game.birdIndex];
+
+  if(bird){
+    ctx.fillStyle=
+      BIRD_TYPES[bird.type].color;
+
+    ctx.fillText(
+      BIRD_TYPES[bird.type].name+
+      " - "+
+      BIRD_TYPES[bird.type].ability,
+      310,
+      42
+    );
+  }
+}
+
+
+function updateBird(){
+  const bird=
+    game.birds[game.birdIndex];
+
+  if(
+    !bird ||
+    !bird.launched ||
+    !bird.alive
+  ){
+    return;
+  }
+
+  bird.vy+=
+    WORLD.gravity;
+
+  bird.x+=
+    bird.vx;
+
+  bird.y+=
+    bird.vy;
+
+  bird.vx*=.995;
+  bird.vy*=.995;
+
+  if(
+    bird.y+
+    bird.radius>
+    WORLD.groundY
+  ){
+    bird.y=
+      WORLD.groundY-
+      bird.radius;
+
+    bird.vy*=-.45;
+    bird.vx*=.7;
+
+    if(
+      Math.abs(bird.vy)<1
+    ){
+      bird.alive=false;
+    }
+  }
+
+  if(
+    bird.x<
+      -100 ||
+    bird.x>
+      WORLD.width+100 ||
+    bird.y>
+      WORLD.height+100
+  ){
+    bird.alive=false;
+  }
+
+  checkBirdPigCollision(bird);
+
+  checkBirdBlockCollision(bird);
+      }function checkBirdPigCollision(bird){
+  for(
+    let i=game.pigs.length-1;
+    i>=0;
+    i--
+  ){
+    const pig=
+      game.pigs[i];
+
+    const dx=
+      bird.x-pig.x;
+
+    const dy=
+      bird.y-pig.y;
+
+    const distance=
+      Math.hypot(dx,dy);
+
+    if(
+      distance<
+      bird.radius+
+      pig.radius
+    ){
+      game.score+=100;
+
+      game.pigs.splice(i,1);
+
+      bird.vx*=.7;
+      bird.vy*=.7;
+    }
+  }
+}
+
+
+function checkBirdBlockCollision(bird){
+  for(
+    let i=game.blocks.length-1;
+    i>=0;
+    i--
+  ){
+    const block=
+      game.blocks[i];
+
+    const dx=
+      bird.x-block.x;
+
+    const dy=
+      bird.y-block.y;
+
+    const distance=
+      Math.hypot(dx,dy);
+
+    const hitRadius=
+      bird.radius+
+      Math.max(
+        block.w,
+        block.h
+      )/2;
+
+    if(
+      distance<
+      hitRadius
+    ){
+      const speed=
+        Math.hypot(
+          bird.vx,
+          bird.vy
+        );
+
+      if(speed>5){
+        game.score+=30;
+
+        game.blocks.splice(
+          i,
+          1
+        );
+
+        bird.vx*=.65;
+        bird.vy*=.65;
+      }
+    }
+  }
+}
+
+
+function updateAbilityBirds(){
+  for(
+    let i=
+      game.abilityBirds.length-1;
+    i>=0;
+    i--
+  ){
+    const bird=
+      game.abilityBirds[i];
+
+    bird.vy+=
+      WORLD.gravity;
+
+    bird.x+=
+      bird.vx;
+
+    bird.y+=
+      bird.vy;
+
+    bird.vx*=.995;
+    bird.vy*=.995;
+
+    if(
+      bird.y+
+      bird.radius>
+      WORLD.groundY
+    ){
+      bird.y=
+        WORLD.groundY-
+        bird.radius;
+
+      bird.vy*=-.45;
+      bird.vx*=.7;
+    }
+
+    checkBirdPigCollision(bird);
+
+    checkBirdBlockCollision(bird);
+
+    if(
+      bird.x<
+        -100 ||
+      bird.x>
+        WORLD.width+100 ||
+      bird.y>
+        WORLD.height+100
+    ){
+      game.abilityBirds.splice(
+        i,
+        1
+      );
+    }
+  }
+}
+
 
 function launchBird(){
-
-  const bird =
-    getBird();
-
+  const bird=
+    game.birds[game.birdIndex];
 
   if(
     !bird ||
     bird.launched ||
     game.gameOver
   ){
-
     return;
-
   }
-
 
   const dx =
     bird.x-
@@ -2609,483 +2790,428 @@ function launchBird(){
     bird.y-
     WORLD.slingY;
 
-
-  /* Don't launch if barely pulled */
-
-  if(
-    Math.hypot(
-      dx,
-      dy
-    )<8
-  ){
-
-    resetCurrentBird();
-
-    return;
-
-  }
-
-
   bird.vx =
-    dx*.12;
+    -dx*.12;
 
   bird.vy =
-    dy*.12;
-
+    -dy*.12;
 
   bird.launched=true;
 
-  bird.used=true;
-
-  bird.alive=true;
-
-
-  /* Small initial movement */
-
-  bird.x +=
-    bird.vx*.4;
-
-  bird.y +=
-    bird.vy*.4;
-
+  game.dragging=false;
 }
 
 
-/* =====================================================
-   POINTER POSITION
-===================================================== */
+function nextBird(){
+  game.birdIndex++;
 
-function updatePointer(
-  event
+  if(
+    game.birdIndex>=
+    game.birds.length
+  ){
+    setTimeout(()=>{
+      if(
+        game.pigs.length>0 &&
+        !game.gameOver
+      ){
+        showMessage(
+          "Level Failed",
+          "No birds left!",
+          "Retry"
+        );
+      }
+    },800);
+
+    return;
+  }
+
+  const bird=
+    game.birds[game.birdIndex];
+
+  bird.x=
+    WORLD.slingX;
+
+  bird.y=
+    WORLD.slingY;
+}
+
+
+function useBirdAbility(){
+  const bird=
+    game.birds[game.birdIndex];
+
+  if(
+    !bird ||
+    !bird.launched ||
+    bird.abilityUsed ||
+    game.gameOver
+  ){
+    return;
+  }
+
+  bird.abilityUsed=true;
+
+  if(
+    bird.type==="yellow"
+  ){
+    bird.vx*=2;
+    bird.vy*=2;
+  }
+
+  else if(
+    bird.type==="blue"
+  ){
+    const speed=
+      Math.max(
+        7,
+        Math.hypot(
+          bird.vx,
+          bird.vy
+        )
+      );
+
+    const angle=
+      Math.atan2(
+        bird.vy,
+        bird.vx
+      );
+
+    for(
+      const offset of [-.45,.45]
+    ){
+      game.abilityBirds.push({
+        type:"blue",
+        x:bird.x,
+        y:bird.y,
+        radius:WORLD.birdRadius,
+        vx:
+          Math.cos(
+            angle+offset
+          )*speed,
+        vy:
+          Math.sin(
+            angle+offset
+          )*speed,
+        launched:true,
+        used:true,
+        abilityUsed:true,
+        alive:true
+      });
+    }
+  }
+
+  else if(
+    bird.type==="black"
+  ){
+    const radius=115;
+
+    for(
+      let i=game.pigs.length-1;
+      i>=0;
+      i--
+    ){
+      const pig=
+        game.pigs[i];
+
+      if(
+        Math.hypot(
+          pig.x-bird.x,
+          pig.y-bird.y
+        )<radius
+      ){
+        game.pigs.splice(i,1);
+        game.score+=100;
+      }
+    }
+
+    for(
+      let i=game.blocks.length-1;
+      i>=0;
+      i--
+    ){
+      const block=
+        game.blocks[i];
+
+      if(
+        Math.hypot(
+          block.x-bird.x,
+          block.y-bird.y
+        )<radius
+      ){
+        game.blocks.splice(i,1);
+        game.score+=30;
+      }
+    }
+
+    bird.vx=0;
+    bird.vy=0;
+  }
+}
+
+
+function showMessage(
+  title,
+  subtitle,
+  buttonText
 ){
-
-  const rect =
-    canvas.getBoundingClientRect();
-
-
-  game.pointer.x =
-    (
-      event.clientX-
-      rect.left
-    )*
-    (
-      WORLD.width/
-      rect.width
+  const overlay=
+    document.getElementById(
+      "messageOverlay"
     );
 
+  document.getElementById(
+    "messageTitle"
+  ).textContent=title;
 
-  game.pointer.y =
-    (
-      event.clientY-
-      rect.top
-    )*
-    (
-      WORLD.height/
-      rect.height
-    );
+  document.getElementById(
+    "messageSubtitle"
+  ).textContent=subtitle;
 
+  document.getElementById(
+    "messageButton"
+  ).textContent=buttonText;
 
-  game.pointer.x =
-    clamp(
-      game.pointer.x,
-      0,
-      WORLD.width
-    );
-
-
-  game.pointer.y =
-    clamp(
-      game.pointer.y,
-      0,
-      WORLD.height
-    );
-
+  overlay.classList.add("show");
 }
 
 
-/* =====================================================
-   POINTER DOWN
-===================================================== */
+function hideMessage(){
+  document
+    .getElementById(
+      "messageOverlay"
+    )
+    .classList.remove("show");
+}
+
+
+document
+  .getElementById(
+    "messageButton"
+  )
+  .addEventListener(
+    "click",
+    ()=>{
+      hideMessage();
+
+      if(
+        game.pigs.length===0
+      ){
+        if(
+          game.level<10
+        ){
+          game.level++;
+          loadLevel();
+        }
+        else{
+          showMessage(
+            "നീ ഒരു ഭയകരൻ തന്നെ",
+            "You completed all 10 levels!",
+            "Play Again"
+          );
+        }
+      }
+      else{
+        loadLevel();
+      }
+    }
+  );
+
 
 canvas.addEventListener(
   "pointerdown",
-  function(event){
-
-    if(game.gameOver)
+  e=>{
+    if(game.gameOver){
       return;
+    }
 
+    e.preventDefault();
 
-    event.preventDefault();
+    updatePointer(e);
 
-
-    updatePointer(
-      event
-    );
-
-
-    const bird =
-      getBird();
-
-
-    /* ==============================================
-       IMPORTANT:
-       IF BIRD IS ALREADY FLYING,
-       TAP/CLICK = USE ABILITY
-    ============================================== */
+    const bird=
+      game.birds[game.birdIndex];
 
     if(
       bird &&
       bird.launched
     ){
-
       useBirdAbility();
-
       return;
-
     }
 
-
-    if(!bird){
-
-      return;
-
-    }
-
-
-    const d =
-      distance(
-        game.pointer.x,
-        game.pointer.y,
-        bird.x,
-        bird.y
-      );
-
-
-    if(d<50){
-
+    if(
+      bird &&
+      !bird.launched &&
+      Math.hypot(
+        e.offsetX-bird.x,
+        e.offsetY-bird.y
+      )<40
+    ){
       game.dragging=true;
-
       game.pointerId=
-        event.pointerId;
-
+        e.pointerId;
 
       canvas.setPointerCapture(
-        event.pointerId
+        e.pointerId
       );
-
     }
-
-  },
-  {
-    passive:false
   }
 );
 
-
-/* =====================================================
-   POINTER MOVE
-===================================================== */
 
 canvas.addEventListener(
   "pointermove",
-  function(event){
-
-    event.preventDefault();
-
-
-    updatePointer(
-      event
-    );
-
-
+  e=>{
     if(
-      game.dragging &&
-      (
-        game.pointerId===
-        event.pointerId
-      )
+      !game.dragging ||
+      game.pointerId!==e.pointerId
     ){
-
-      const bird =
-        getBird();
-
-
-      if(!bird) return;
-
-
-      let dx =
-        game.pointer.x-
-        WORLD.slingX;
-
-      let dy =
-        game.pointer.y-
-        WORLD.slingY;
-
-
-      const d =
-        Math.hypot(
-          dx,
-          dy
-        );
-
-
-      if(
-        d>WORLD.maxPull
-      ){
-
-        dx =
-          dx/d*
-          WORLD.maxPull;
-
-        dy =
-          dy/d*
-          WORLD.maxPull;
-
-      }
-
-
-      bird.x =
-        WORLD.slingX+
-        dx;
-
-      bird.y =
-        WORLD.slingY+
-        dy;
-
+      return;
     }
 
-  },
-  {
-    passive:false
+    e.preventDefault();
+
+    updatePointer(e);
+
+    const bird=
+      game.birds[game.birdIndex];
+
+    if(!bird){
+      return;
+    }
+
+    let dx=
+      game.pointer.x-
+      WORLD.slingX;
+
+    let dy=
+      game.pointer.y-
+      WORLD.slingY;
+
+    const distance=
+      Math.hypot(dx,dy);
+
+    if(
+      distance>WORLD.maxPull
+    ){
+      const scale=
+        WORLD.maxPull/
+        distance;
+
+      dx*=scale;
+      dy*=scale;
+    }
+
+    bird.x=
+      WORLD.slingX+dx;
+
+    bird.y=
+      WORLD.slingY+dy;
   }
 );
 
-
-/* =====================================================
-   POINTER UP
-===================================================== */
 
 canvas.addEventListener(
   "pointerup",
-  function(event){
-
-    event.preventDefault();
-
-
+  e=>{
     if(
-      !game.dragging
+      game.pointerId!==e.pointerId
     ){
-
       return;
-
     }
-
-
-    if(
-      game.pointerId===
-      event.pointerId
-    ){
-
-      updatePointer(
-        event
-      );
-
-
-      game.dragging=false;
-
-      game.pointerId=null;
-
-
-      try{
-
-        canvas.releasePointerCapture(
-          event.pointerId
-        );
-
-      }
-      catch(e){}
-
-
-      /* IMPORTANT:
-         Launch immediately */
-
-      launchBird();
-
-    }
-
-  },
-  {
-    passive:false
-  }
-);
-
-
-/* =====================================================
-   POINTER CANCEL
-===================================================== */
-
-canvas.addEventListener(
-  "pointercancel",
-  function(event){
 
     if(
       game.dragging
     ){
-
-      game.dragging=false;
-
-      game.pointerId=null;
-
-      resetCurrentBird();
-
+      launchBird();
     }
 
-  }
-);
-
-
-/* =====================================================
-   PREVENT TOUCH SCROLL
-===================================================== */
-
-canvas.addEventListener(
-  "touchstart",
-  function(event){
-
-    event.preventDefault();
-
-  },
-  {
-    passive:false
+    game.dragging=false;
+    game.pointerId=null;
   }
 );
 
 
 canvas.addEventListener(
-  "touchmove",
-  function(event){
-
-    event.preventDefault();
-
-  },
-  {
-    passive:false
+  "pointercancel",
+  e=>{
+    game.dragging=false;
+    game.pointerId=null;
   }
 );
 
-
-canvas.addEventListener(
-  "touchend",
-  function(event){
-
-    event.preventDefault();
-
-  },
-  {
-    passive:false
-  }
-);
-
-
-/* =====================================================
-   SPECIAL BIRD TAP
-===================================================== */
-
-/*
-   Pointerdown above already handles:
-   Mouse click
-   Mobile touch
-   Tablet touch
-
-   The old click event is NOT needed.
-*/
-
-
-/* =====================================================
-   KEYBOARD
-===================================================== */
 
 window.addEventListener(
   "keydown",
-  function(event){
-
+  e=>{
     if(
-      event.key==="r" ||
-      event.key==="R"
+      e.code==="Space"
     ){
-
-      loadLevel(
-        game.level
-      );
-
-    }
-
-
-    /* Space = bird ability */
-
-    if(
-      event.code==="Space"
-    ){
-
-      event.preventDefault();
-
+      e.preventDefault();
       useBirdAbility();
-
     }
-
   }
-);/* =====================================================
-   GAME LOOP
-===================================================== */
+);
+
+
+function updatePointer(e){
+  const rect=
+    canvas.getBoundingClientRect();
+
+  game.pointer.x=
+    (e.clientX-rect.left)*
+    WORLD.width/
+    rect.width;
+
+  game.pointer.y=
+    (e.clientY-rect.top)*
+    WORLD.height/
+    rect.height;
+}
+
 
 function gameLoop(){
+  updateBird();
+
+  updateAbilityBirds();
 
   if(
-    !game.gameOver
+    game.pigs.length===0 &&
+    !game.levelChanging
   ){
+    game.levelChanging=true;
 
-    updateBird();
-
-    /* Update birds created by Blue ability */
-
-    updateAbilityBirds();
-
-
-    /* Check win */
-
-    if(
-      game.pigs.length===0
-    ){
-
-      winLevel();
-
-    }
-
+    setTimeout(()=>{
+      if(
+        game.level<10
+      ){
+        showMessage(
+          "Level Complete!",
+          "അടുത്തത് നോക്ക് മച്ചു",
+          "Next Level"
+        );
+      }
+      else{
+        showMessage(
+          "നീ ഒരു ഭയകരൻ തന്നെ",
+          "You completed all 10 levels!",
+          "Play Again"
+        );
+      }
+    },700);
   }
 
-
   draw();
-
 
   requestAnimationFrame(
     gameLoop
   );
-
 }
 
 
-/* =====================================================
-   START GAME
-===================================================== */
-
-game.score=0;
-
-scoreText.textContent=0;
-
-loadLevel(1);
+loadLevel();
 
 gameLoop();
-
 </script>
 
 </body>
